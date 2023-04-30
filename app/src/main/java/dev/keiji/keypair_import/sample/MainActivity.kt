@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier,
                         uiState = uiState,
                         onClickKeyGenerateAndImport = {
-                            viewModel.generateKeyPair(hasFeatureStrongBoxKeyStore)
+                            viewModel.generateKey(hasFeatureStrongBoxKeyStore)
                         },
                         onClickUseKey = {
                             viewModel.useKey("Hello ${System.currentTimeMillis()}")

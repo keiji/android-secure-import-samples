@@ -55,13 +55,13 @@ class MainViewModel : ViewModel() {
         it.load(null)
     }
 
-    fun generateKeyPair(hasFeatureStrongBoxKeyStore: Boolean) {
+    fun generateKey(isStrongBoxEnabled: Boolean) {
         viewModelScope.launch {
-            internalGenerateKeyPair(hasFeatureStrongBoxKeyStore)
+            internalGenerateKey(isStrongBoxEnabled)
         }
     }
 
-    private suspend fun internalGenerateKeyPair(hasFeatureStrongBoxKeyStore: Boolean) =
+    private suspend fun internalGenerateKey(isStrongBoxEnabled: Boolean) =
         withContext(Dispatchers.IO) {
             _uiState.value = _uiState.value.copy(
                 status = "Wrapping keypair generating..."
@@ -73,7 +73,7 @@ class MainViewModel : ViewModel() {
             val wrappingKeyPair =
                 generateKeyPairInKeyStore(
                     WRAPPING_KEY_ALIAS,
-                    isStrongBoxBacked = hasFeatureStrongBoxKeyStore
+                    isStrongBoxBacked = isStrongBoxEnabled
                 )
 
             _uiState.value = _uiState.value.copy(
@@ -94,7 +94,7 @@ class MainViewModel : ViewModel() {
                 wrappedKeyMaterial,
                 WRAPPING_KEY_ALIAS,
                 keyAlias,
-                hasFeatureStrongBoxKeyStore,
+                isStrongBoxEnabled = isStrongBoxEnabled,
             )
 
             _uiState.value = _uiState.value.copy(
@@ -106,14 +106,14 @@ class MainViewModel : ViewModel() {
         wrappedKeyMaterial: ByteArray,
         wrappingKeyAlias: String,
         keyAlias: String,
-        hasFeatureStrongBoxKeyStore: Boolean,
+        isStrongBoxEnabled: Boolean,
     ) {
         val spec = KeyGenParameterSpec.Builder(
             wrappingKeyAlias,
             KeyProperties.PURPOSE_WRAP_KEY
         )
             .setDigests(KeyProperties.DIGEST_SHA256)
-            .setIsStrongBoxBacked(hasFeatureStrongBoxKeyStore)
+            .setIsStrongBoxBacked(isStrongBoxEnabled)
             .build()
 
         val wrappedKeyEntry = WrappedKeyEntry(
