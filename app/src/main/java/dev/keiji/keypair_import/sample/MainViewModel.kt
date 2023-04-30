@@ -166,20 +166,20 @@ class MainViewModel : ViewModel() {
         val aad = wrappedKeyDescription.encoded
         cipher.updateAAD(aad)
 
-        var encryptedSecureKey = cipher.doFinal(keyMaterial)
+        val encrypted = cipher.doFinal(keyMaterial)
 
-        val len = encryptedSecureKey.size
+        val len = encrypted.size
         val tagSize: Int = GCM_TAG_SIZE / Byte.SIZE_BITS
-        val tag: ByteArray = Arrays.copyOfRange(encryptedSecureKey, len - tagSize, len)
+        val tag: ByteArray = Arrays.copyOfRange(encrypted, len - tagSize, len)
 
-        encryptedSecureKey = Arrays.copyOfRange(encryptedSecureKey, 0, len - tagSize)
+        val encryptedAesKey = Arrays.copyOfRange(encrypted, 0, len - tagSize)
 
         val items = ASN1EncodableVector().apply {
             add(ASN1Integer(WRAPPED_FORMAT_VERSION))
             add(DEROctetString(encryptedEphemeralKeys))
             add(DEROctetString(iv))
             add(wrappedKeyDescription)
-            add(DEROctetString(encryptedSecureKey))
+            add(DEROctetString(encryptedAesKey))
             add(DEROctetString(tag))
         }
         return DERSequence(items).encoded
@@ -255,7 +255,8 @@ class MainViewModel : ViewModel() {
     }
 
     fun useKey(plainText: String) {
-        val secretKey = keyStore.getKey(keyAlias, null) as SecretKey
+        val secretKey = keyStore.getKey(keyAlias, null) as SecretKey?
+        secretKey ?: return
 
         val factory = SecretKeyFactory.getInstance(secretKey.algorithm, ANDROID_KEYSTORE)
         val keyInfo = try {
